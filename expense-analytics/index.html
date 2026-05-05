@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Expense Analytics Platform</title>
+  <link rel="stylesheet" href="css/style.css">
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<!-- ── APP SHELL ─────────────────────────────────────────────── -->
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">📊</div>
+      <div class="logo-text">Expense<br><span>Analytics</span></div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section">Overview</div>
+      <a class="nav-item active" data-page="dashboard">
+        <span class="nav-icon">🏠</span> Dashboard
+      </a>
+      <a class="nav-item" data-page="expenses">
+        <span class="nav-icon">💳</span> Transactions
+      </a>
+
+      <div class="nav-section">Insights</div>
+      <a class="nav-item" data-page="analytics">
+        <span class="nav-icon">📈</span> Analytics
+      </a>
+      <a class="nav-item" data-page="budget">
+        <span class="nav-icon">🎯</span> Budget & Goals
+      </a>
+    </nav>
+
+    <div class="sidebar-user">
+      <div class="user-avatar">🧑‍💼</div>
+      <div class="user-info">
+        <div class="user-name">Alex Morgan</div>
+        <div class="user-email">demo@expense.com</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- HEADER -->
+    <header class="header">
+      <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+      <h1 class="header-title" id="headerTitle">📊 Dashboard</h1>
+
+      <div class="header-actions">
+        <div class="month-nav">
+          <button onclick="prevMonth()">‹</button>
+          <span id="monthLabel">Loading…</span>
+          <button onclick="nextMonth()">›</button>
+        </div>
+        <button class="btn btn-primary" onclick="openAddModal('expense')">
+          + Add Transaction
+        </button>
+      </div>
+    </header>
+
+    <!-- ══════════════════════════════════════════
+         PAGE: DASHBOARD
+    ═══════════════════════════════════════════ -->
+    <div class="page active" id="page-dashboard">
+      <div style="padding:0">
+
+        <!-- Stat Cards -->
+        <div class="grid grid-4" style="margin-bottom:20px">
+          <div class="stat-card income-card delay-1" id="statIncome">
+            <div class="spinner"></div>
+          </div>
+          <div class="stat-card expense-card delay-2" id="statExpense">
+            <div class="spinner"></div>
+          </div>
+          <div class="stat-card balance-card delay-3" id="statBalance">
+            <div class="spinner"></div>
+          </div>
+          <div class="stat-card savings-card delay-4" id="statSavings">
+            <div class="spinner"></div>
+          </div>
+        </div>
+
+        <!-- Main Charts Row -->
+        <div class="grid grid-12" style="margin-bottom:20px">
+          <!-- Trend Chart -->
+          <div class="card col-span-2">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Income vs Expenses</div>
+                <div class="card-subtitle">Last 30 days daily view</div>
+              </div>
+              <button class="btn btn-sm btn-secondary" onclick="openAddModal('expense')">+ Add</button>
+            </div>
+            <div class="chart-wrap" style="height:240px">
+              <canvas id="trendChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Row -->
+        <div class="grid grid-3" style="margin-bottom:20px">
+
+          <!-- Category Breakdown -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Categories</div>
+                <div class="card-subtitle">This month's breakdown</div>
+              </div>
+            </div>
+            <div class="donut-wrap" style="height:180px;position:relative;margin-bottom:16px">
+              <canvas id="donutChart"></canvas>
+              <div class="donut-center">
+                <div class="big" id="donutTotal">₹0</div>
+                <div class="small">Total</div>
+              </div>
+            </div>
+            <div id="categoryList"></div>
+          </div>
+
+          <!-- Budget Meter + Payment Methods -->
+          <div style="display:flex;flex-direction:column;gap:20px">
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">Monthly Budget</div>
+                  <div class="card-subtitle">Spending vs allocation</div>
+                </div>
+              </div>
+              <div id="budgetMeter"></div>
+              <div style="margin-top:16px;display:flex;gap:8px">
+                <button class="btn btn-sm btn-secondary" onclick="navigate('budget')">Set Budget</button>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">Payment Methods</div>
+                  <div class="card-subtitle">How you pay</div>
+                </div>
+              </div>
+              <div style="height:120px">
+                <canvas id="payChart"></canvas>
+              </div>
+              <div class="legend" id="payLegend"></div>
+            </div>
+          </div>
+
+          <!-- Insights + Recent -->
+          <div style="display:flex;flex-direction:column;gap:20px">
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">💡 Smart Insights</div>
+              </div>
+              <div id="insightPanel"></div>
+            </div>
+
+            <div class="card" style="flex:1">
+              <div class="card-header">
+                <div class="card-title">Recent Transactions</div>
+                <a class="btn btn-sm btn-secondary" onclick="navigate('expenses')">View All</a>
+              </div>
+              <div id="recentList"></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         PAGE: EXPENSES
+    ═══════════════════════════════════════════ -->
+    <div class="page" id="page-expenses">
+      <div class="filter-bar">
+        <input type="text" class="form-input" id="searchExp" placeholder="🔍 Search transactions…">
+        <select class="form-select" id="filterType">
+          <option value="">All Types</option>
+          <option value="expense">Expense</option>
+          <option value="income">Income</option>
+        </select>
+        <select class="form-select" id="filterCat">
+          <option value="">All Categories</option>
+        </select>
+        <button class="btn btn-secondary" onclick="loadExpenses(true)">Reset</button>
+        <button class="btn btn-primary" onclick="openAddModal('expense')" style="margin-left:auto">+ Add Transaction</button>
+      </div>
+
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Description</th>
+                <th>Category</th>
+                <th>Amount</th>
+                <th>Payment</th>
+                <th>Type</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="expenseTableBody">
+              <tr><td colspan="7"><div class="loading"><div class="spinner"></div></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         PAGE: ANALYTICS
+    ═══════════════════════════════════════════ -->
+    <div class="page" id="page-analytics">
+      <div class="kpi-bar" id="anaKpis">
+        <div class="loading"><div class="spinner"></div></div>
+      </div>
+
+      <div class="grid grid-12" style="margin-bottom:20px">
+        <div class="card col-span-2">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Monthly Income vs Expenses</div>
+              <div class="card-subtitle">Last 6 months comparison</div>
+            </div>
+          </div>
+          <div class="chart-wrap" style="height:300px">
+            <canvas id="monthlyChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Top Spending Categories</div>
+            <div class="card-subtitle">All-time breakdown</div>
+          </div>
+        </div>
+        <div class="chart-wrap" style="height:340px">
+          <canvas id="topCatChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         PAGE: BUDGET & GOALS
+    ═══════════════════════════════════════════ -->
+    <div class="page" id="page-budget">
+      <div class="grid grid-2" style="margin-bottom:20px">
+
+        <!-- Monthly Budget -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">💰 Monthly Budget</div>
+              <div class="card-subtitle">Set your spending limit</div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Total Budget (₹)</label>
+            <input type="number" class="form-input" id="budgetInput" placeholder="e.g. 50000">
+          </div>
+          <button class="btn btn-primary" onclick="saveBudget()">💾 Save Budget</button>
+        </div>
+
+        <!-- Category Budgets -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">📦 Category Budgets</div>
+          </div>
+          <div id="catBudgetList"><div class="loading"><div class="spinner"></div></div></div>
+        </div>
+      </div>
+
+      <!-- Savings Goals -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">🎯 Savings Goals</div>
+            <div class="card-subtitle">Track your financial targets</div>
+          </div>
+          <button class="btn btn-primary" onclick="openAddGoalModal()">+ New Goal</button>
+        </div>
+        <div class="grid grid-3" id="goalsList">
+          <div class="loading"><div class="spinner"></div></div>
+        </div>
+      </div>
+    </div>
+
+  </main><!-- /main -->
+</div><!-- /app -->
+
+<!-- ══════════════════════════════════════════
+     MODALS
+═══════════════════════════════════════════ -->
+
+<!-- ADD/EDIT EXPENSE MODAL -->
+<div class="modal-overlay" id="expenseModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">Add Transaction</div>
+      <button class="modal-close" onclick="closeModal('expenseModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="expType" value="expense">
+
+      <!-- Type Toggle -->
+      <div class="form-group">
+        <label class="form-label">Type</label>
+        <div class="type-toggle">
+          <button class="type-btn active expense" data-type="expense">💸 Expense</button>
+          <button class="type-btn income" data-type="income">💰 Income</button>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Title *</label>
+          <input type="text" class="form-input" id="expTitle" placeholder="e.g. Grocery Shopping">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Amount (₹) *</label>
+          <input type="number" class="form-input" id="expAmount" placeholder="0.00" min="0" step="0.01">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Date *</label>
+          <input type="date" class="form-input" id="expDate">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Category</label>
+          <select class="form-select" id="expCategory">
+            <option value="">No Category</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Payment Method</label>
+        <select class="form-select" id="expPayment">
+          <option value="cash">💵 Cash</option>
+          <option value="card" selected>💳 Card</option>
+          <option value="upi">📱 UPI</option>
+          <option value="netbanking">🏦 Net Banking</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Notes</label>
+        <textarea class="form-textarea" id="expNotes" placeholder="Optional notes…"></textarea>
+      </div>
+
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
+        <button class="btn btn-secondary" onclick="closeModal('expenseModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="saveExpense()">💾 Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD SAVINGS GOAL MODAL -->
+<div class="modal-overlay" id="goalModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">New Savings Goal</div>
+      <button class="modal-close" onclick="closeModal('goalModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Goal Title *</label>
+          <input type="text" class="form-input" id="goalTitle" placeholder="e.g. Vacation Fund">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Icon</label>
+          <input type="text" class="form-input" id="goalIcon" placeholder="🎯" maxlength="4">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Target Amount (₹) *</label>
+          <input type="number" class="form-input" id="goalTarget" placeholder="50000" min="1">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Deadline</label>
+          <input type="date" class="form-input" id="goalDeadline">
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
+        <button class="btn btn-secondary" onclick="closeModal('goalModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="saveGoal()">🎯 Create Goal</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script src="js/main.js"></script>
+</body>
+</html>
